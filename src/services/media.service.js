@@ -21,18 +21,26 @@ class MediaService {
 
       const uploadOptions = {
         resource_type: resourceType,
-        folder: isVideo ? 'edutime/videos' : 'edutime/images',
-        transformation: isVideo ? [] : [
-          { quality: 'auto', fetch_format: 'auto' }
-        ]
+        folder: isVideo ? 'edutime/videos' : 'edutime/images'
       };
+
+      if (!isVideo) {
+        uploadOptions.quality = 'auto:best';
+        uploadOptions.fetch_format = 'auto';
+        uploadOptions.flags = 'progressive'; 
+    
+      } else {
+        uploadOptions.quality = 'auto:best';
+        uploadOptions.resource_type = 'video';
+      }
 
       const result = await cloudinary.uploader.upload(dataURI, uploadOptions);
 
       const media = await Media.create({
         url: result.secure_url,
         type: isVideo ? 'video' : 'image',
-        publicId: result.public_id
+        publicId: result.public_id,
+        thumbnail: isVideo ? result.secure_url.replace(/\.[^.]+$/, '.jpg') : null
       });
 
       logger.info(`Media uploaded successfully: ${media._id} to ${isVideo ? 'video' : 'image'} cloudinary`);
