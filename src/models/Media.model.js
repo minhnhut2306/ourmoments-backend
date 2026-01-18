@@ -15,12 +15,15 @@ const mediaSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  thumbnail: {  
+    type: String,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
-
 mediaSchema.index({ type: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Media', mediaSchema);

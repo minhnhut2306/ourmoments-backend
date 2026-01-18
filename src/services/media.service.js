@@ -1,4 +1,4 @@
-const cloudinary = require('../config/cloudinary');
+const { cloudinaryImage, cloudinaryVideo } = require('../config/cloudinary');
 const Media = require('../models/Media.model');
 const FavoriteMedia = require('../models/FavoriteMedia.model');
 const logger = require('../utils/logger');
@@ -12,6 +12,9 @@ class MediaService {
 
       const isVideo = file.mimetype.startsWith('video/');
       const resourceType = isVideo ? 'video' : 'image';
+      
+      // Chọn Cloudinary instance phù hợp
+      const cloudinary = isVideo ? cloudinaryVideo : cloudinaryImage;
 
       const b64 = Buffer.from(file.buffer).toString('base64');
       const dataURI = `data:${file.mimetype};base64,${b64}`;
@@ -32,7 +35,7 @@ class MediaService {
         publicId: result.public_id
       });
 
-      logger.info(`Media uploaded successfully: ${media._id}`);
+      logger.info(`Media uploaded successfully: ${media._id} to ${isVideo ? 'video' : 'image'} cloudinary`);
       return media;
     } catch (error) {
       logger.error('Upload media error:', error);
@@ -117,15 +120,17 @@ class MediaService {
         throw new Error('Media not found');
       }
 
+      // Chọn Cloudinary instance phù hợp để xóa
+      const cloudinary = media.type === 'video' ? cloudinaryVideo : cloudinaryImage;
+
       await cloudinary.uploader.destroy(media.publicId, {
         resource_type: media.type === 'video' ? 'video' : 'image'
       });
 
       await FavoriteMedia.deleteOne({ mediaId: id });
-
       await Media.findByIdAndDelete(id);
 
-      logger.info(`Media deleted successfully: ${id}`);
+      logger.info(`Media deleted successfully from ${media.type} cloudinary: ${id}`);
       return { message: 'Xóa media thành công' };
     } catch (error) {
       logger.error('Delete media error:', error);
