@@ -21,7 +21,7 @@ class MediaService {
 
       const uploadOptions = {
         resource_type: resourceType,
-        folder: isVideo ? 'edutime/videos' : 'edutime/images'
+        folder: isVideo ? 'ourmoments/videos' : 'ourmoments/images'
       };
 
       if (!isVideo) {
