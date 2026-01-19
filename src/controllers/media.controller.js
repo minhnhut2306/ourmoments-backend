@@ -12,13 +12,13 @@ class MediaController {
     );
   }
 
-  async getAllMedia(req, res) {
-    const { type, page = 1, limit = 20 } = req.query;
-    const result = await mediaService.getAllMedia(type, page, limit);
-    return res.status(200).json(
-      successResponse('Lấy danh sách media thành công', result)
-    );
-  }
+async getAllMedia(req, res) {
+  const { type } = req.query;
+  const result = await mediaService.getAllMedia(type);
+  return res.status(200).json(
+    successResponse('Lấy danh sách media thành công', result)
+  );
+}
 
   async getMediaById(req, res) {
     const media = await mediaService.getMediaById(req.params.id);

@@ -31,34 +31,29 @@ class MediaService {
     }
   }
 
-  async getAllMedia(type = null, page = 1, limit = 20) {
-    try {
-      const query = type ? { type } : {};
-      const skip = (page - 1) * limit;
+  // src/services/media.service.js
 
-      const [media, total] = await Promise.all([
-        Media.find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean(),
-        Media.countDocuments(query)
-      ]);
+async getAllMedia(type = null) {
+  try {
+    const query = type ? { type } : {};
 
-      return {
-        media,
-        pagination: {
-          total,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(total / limit)
-        }
-      };
-    } catch (error) {
-      logger.error('Get all media error:', error);
-      throw error;
-    }
+    const media = await Media.find(query)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const total = media.length;
+
+    logger.info(`Get all media: ${total} items (type: ${type || 'all'})`);
+
+    return {
+      media,
+      total
+    };
+  } catch (error) {
+    logger.error('Get all media error:', error);
+    throw error;
   }
+}
 
   async getMediaById(id) {
     try {
