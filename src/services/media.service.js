@@ -31,29 +31,67 @@ class MediaService {
     }
   }
 
-  // src/services/media.service.js
+  // ✅ Get images only với pagination
+  async getImageMedia(page = 1, limit = 20) {
+    try {
+      const skip = (page - 1) * limit;
 
-async getAllMedia(type = null) {
-  try {
-    const query = type ? { type } : {};
+      const [media, total] = await Promise.all([
+        Media.find({ type: 'image' })
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Media.countDocuments({ type: 'image' })
+      ]);
 
-    const media = await Media.find(query)
-      .sort({ createdAt: -1 })
-      .lean();
+      logger.info(`Get images: ${media.length} items (page ${page})`);
 
-    const total = media.length;
-
-    logger.info(`Get all media: ${total} items (type: ${type || 'all'})`);
-
-    return {
-      media,
-      total
-    };
-  } catch (error) {
-    logger.error('Get all media error:', error);
-    throw error;
+      return {
+        media,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      logger.error('Get images error:', error);
+      throw error;
+    }
   }
-}
+
+  // ✅ Get videos only với pagination
+  async getVideoMedia(page = 1, limit = 20) {
+    try {
+      const skip = (page - 1) * limit;
+
+      const [media, total] = await Promise.all([
+        Media.find({ type: 'video' })
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Media.countDocuments({ type: 'video' })
+      ]);
+
+      logger.info(`Get videos: ${media.length} items (page ${page})`);
+
+      return {
+        media,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      logger.error('Get videos error:', error);
+      throw error;
+    }
+  }
 
   async getMediaById(id) {
     try {
@@ -66,14 +104,6 @@ async getAllMedia(type = null) {
       logger.error('Get media by id error:', error);
       throw error;
     }
-  }
-
-  async getImageMedia(page = 1, limit = 20) {
-    return this.getAllMedia('image', page, limit);
-  }
-
-  async getVideoMedia(page = 1, limit = 20) {
-    return this.getAllMedia('video', page, limit);
   }
 
   async updateMedia(id, updateData) {
