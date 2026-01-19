@@ -4,49 +4,29 @@ const FavoriteMedia = require('../models/FavoriteMedia.model');
 const logger = require('../utils/logger');
 
 class MediaService {
-  async uploadMedia(file) {
+  async saveMediaMetadata(mediaData) {
     try {
-      if (!file) {
-        throw new Error('No file uploaded');
-      }
-
-      const isVideo = file.mimetype.startsWith('video/');
-      const resourceType = isVideo ? 'video' : 'image';
+      const { url, type, publicId, thumbnail } = mediaData;
       
-      // Chọn Cloudinary instance phù hợp
-      const cloudinary = isVideo ? cloudinaryVideo : cloudinaryImage;
-
-      const b64 = Buffer.from(file.buffer).toString('base64');
-      const dataURI = `data:${file.mimetype};base64,${b64}`;
-
-      const uploadOptions = {
-        resource_type: resourceType,
-        folder: isVideo ? 'ourmoments/videos' : 'ourmoments/images'
-      };
-
-      if (!isVideo) {
-        uploadOptions.quality = 'auto:best';
-        uploadOptions.fetch_format = 'auto';
-        uploadOptions.flags = 'progressive'; 
-    
-      } else {
-        uploadOptions.quality = 'auto:best';
-        uploadOptions.resource_type = 'video';
+      if (!url || !publicId || !type) {
+        throw new Error('Thiếu thông tin bắt buộc: url, publicId, type');
       }
 
-      const result = await cloudinary.uploader.upload(dataURI, uploadOptions);
+      if (!['image', 'video'].includes(type)) {
+        throw new Error('Type phải là "image" hoặc "video"');
+      }
 
       const media = await Media.create({
-        url: result.secure_url,
-        type: isVideo ? 'video' : 'image',
-        publicId: result.public_id,
-        thumbnail: isVideo ? result.secure_url.replace(/\.[^.]+$/, '.jpg') : null
+        url,
+        type,
+        publicId,
+        thumbnail: type === 'video' ? thumbnail : null
       });
 
-      logger.info(`Media uploaded successfully: ${media._id} to ${isVideo ? 'video' : 'image'} cloudinary`);
+      logger.info(`Media metadata saved: ${media._id} (${type})`);
       return media;
     } catch (error) {
-      logger.error('Upload media error:', error);
+      logger.error('Save metadata error:', error);
       throw error;
     }
   }
@@ -128,7 +108,6 @@ class MediaService {
         throw new Error('Media not found');
       }
 
-      // Chọn Cloudinary instance phù hợp để xóa
       const cloudinary = media.type === 'video' ? cloudinaryVideo : cloudinaryImage;
 
       await cloudinary.uploader.destroy(media.publicId, {
@@ -138,7 +117,7 @@ class MediaService {
       await FavoriteMedia.deleteOne({ mediaId: id });
       await Media.findByIdAndDelete(id);
 
-      logger.info(`Media deleted successfully from ${media.type} cloudinary: ${id}`);
+      logger.info(`Media deleted successfully: ${id}`);
       return { message: 'Xóa media thành công' };
     } catch (error) {
       logger.error('Delete media error:', error);

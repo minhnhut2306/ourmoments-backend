@@ -1,15 +1,14 @@
 const mediaService = require('../services/media.service');
 const {
   successResponse,
-  createdResponse,
-  notFoundResponse
+  createdResponse
 } = require('../helper/createResponse.helper');
 
 class MediaController {
-  async uploadMedia(req, res) {
-    const media = await mediaService.uploadMedia(req.file);
+  async saveMediaMetadata(req, res) {
+    const media = await mediaService.saveMediaMetadata(req.body);
     return res.status(201).json(
-      createdResponse('Upload media thành công', media)
+      createdResponse('Lưu metadata thành công', media)
     );
   }
 
