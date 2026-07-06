@@ -32,21 +32,30 @@ class WishListController {
     return res.status(200).json(successResponse(result.message));
   }
 
+  async reorder(req, res) {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds)) {
+      return res.status(400).json(badRequestResponse('orderedIds phải là array'));
+    }
+    await wishListService.reorder(orderedIds);
+    return res.status(200).json(successResponse('Cập nhật thứ tự thành công'));
+  }
+
   async analyzeByImage(req, res) {
-    const { imageUrl } = req.body;
+    const { imageUrl, platform = 'shopee' } = req.body;
     if (!imageUrl) {
       return res.status(400).json(badRequestResponse('Thiếu imageUrl'));
     }
-    const result = await wishListService.analyzeByImage(imageUrl);
+    const result = await wishListService.analyzeByImage(imageUrl, platform);
     return res.status(200).json(successResponse('Phân tích ảnh thành công', result));
   }
 
   async analyzeByUrl(req, res) {
-    const { shopeeUrl } = req.body;
-    if (!shopeeUrl) {
-      return res.status(400).json(badRequestResponse('Thiếu shopeeUrl'));
+    const { shopUrl, platform = 'shopee' } = req.body;
+    if (!shopUrl) {
+      return res.status(400).json(badRequestResponse('Thiếu shopUrl'));
     }
-    const result = await wishListService.analyzeByUrl(shopeeUrl);
+    const result = await wishListService.analyzeByUrl(shopUrl, platform);
     return res.status(200).json(successResponse('Phân tích URL thành công', result));
   }
 }

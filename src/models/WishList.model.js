@@ -40,12 +40,16 @@ const wishListSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  order: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
 
-wishListSchema.index({ purchased: 1, priority: 1, createdAt: -1 });
+wishListSchema.index({ purchased: 1, order: 1, createdAt: -1 });
 
 module.exports = mongoose.model('WishList', wishListSchema);

@@ -3,7 +3,7 @@ const logger = require('../utils/logger');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL = 'generativelanguage.googleapis.com';
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 function httpsPost(hostname, path, body) {
   return new Promise((resolve, reject) => {
@@ -95,7 +95,7 @@ function fetchImageAsBase64(imageUrl) {
   });
 }
 
-async function analyzeImageForProduct(imageUrl) {
+async function analyzeImageForProduct(imageUrl, platform = 'shopee') {
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY chưa được cấu hình trong .env');
   }
@@ -104,16 +104,23 @@ async function analyzeImageForProduct(imageUrl) {
   const { base64, mimeType } = await fetchImageAsBase64(imageUrl);
   logger.info(`Image fetched: ${mimeType}, size: ${Math.round(base64.length * 0.75 / 1024)}KB`);
 
+  const isTikTok = platform === 'tiktok';
+  const shopField = isTikTok ? 'tiktokUrl' : 'shopeeUrl';
+  const shopLink = isTikTok
+    ? 'https://www.tiktok.com/search/product?q=keyword+tiếng+Việt'
+    : 'https://shopee.vn/search?keyword=keyword+tiếng+Việt';
+  const shopName = isTikTok ? 'TikTok Shop' : 'Shopee';
+
   const prompt = `Bạn là trợ lý mua sắm thông minh. Hãy phân tích ảnh sản phẩm này và trả về JSON theo đúng format sau (không thêm text nào khác ngoài JSON):
 
 {
   "name": "tên sản phẩm cụ thể bằng tiếng Việt",
   "price": "giá ước tính (VD: 150.000đ - 200.000đ)",
-  "shopeeUrl": "https://shopee.vn/search?keyword=keyword+tiếng+Việt",
+  "${shopField}": "${shopLink}",
   "imageUrl": null
 }
 
-Đặt shopeeUrl là link tìm kiếm Shopee với keyword tiếng Việt phù hợp nhất.`;
+Đặt ${shopField} là link tìm kiếm ${shopName} với keyword tiếng Việt phù hợp nhất.`;
 
   const parts = [
     { text: prompt },
@@ -126,35 +133,39 @@ async function analyzeImageForProduct(imageUrl) {
 
   const result = parseGeminiResult(text);
   result.imageUrl = imageUrl;
+  if (isTikTok && result.tiktokUrl) result.shopeeUrl = result.tiktokUrl;
   return result;
 }
 
-async function analyzeShopeeUrl(shopeeUrl) {
+async function analyzeShopeeUrl(shopUrl, platform = 'shopee') {
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY chưa được cấu hình trong .env');
   }
 
-  const prompt = `Đây là URL sản phẩm Shopee: ${shopeeUrl}
+  const isTikTok = platform === 'tiktok';
+  const shopName = isTikTok ? 'TikTok Shop' : 'Shopee';
 
-Từ URL này, hãy trích xuất thông tin và trả về JSON theo đúng format (không thêm text nào khác):
+  const prompt = `Đây là URL sản phẩm ${shopName}: ${shopUrl}
+
+Từ URL này, hãy trích xuất tên sản phẩm và trả về JSON theo đúng format (không thêm text nào khác):
 
 {
-  "name": "tên sản phẩm từ URL (decode URL nếu cần)",
+  "name": "tên sản phẩm từ URL bằng tiếng Việt (decode URL nếu cần)",
   "price": null,
-  "shopeeUrl": "${shopeeUrl}",
+  "shopeeUrl": "${shopUrl}",
   "imageUrl": null
 }
 
-Lưu ý: Chỉ trích xuất tên sản phẩm từ slug trong URL. Đặt price và imageUrl là null vì cần scrape trực tiếp.`;
+Chỉ trích xuất tên sản phẩm từ slug trong URL. Đặt price và imageUrl là null.`;
 
   const parts = [{ text: prompt }];
 
-  logger.info('Gemini: Phân tích Shopee URL...');
+  logger.info(`Gemini: Phân tích ${shopName} URL...`);
   const text = await callGemini(parts);
   logger.info('Gemini response (URL):', text.substring(0, 200));
 
   const result = parseGeminiResult(text);
-  result.shopeeUrl = shopeeUrl;
+  result.shopeeUrl = shopUrl;
   return result;
 }
 

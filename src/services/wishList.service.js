@@ -6,11 +6,24 @@ class WishListService {
   async getAll() {
     try {
       const items = await WishList.find()
-        .sort({ purchased: 1, priority: -1, createdAt: -1 })
+        .sort({ purchased: 1, order: 1, createdAt: -1 })
         .lean();
       return items;
     } catch (error) {
       logger.error('WishList getAll error:', error);
+      throw error;
+    }
+  }
+
+  async reorder(orderedIds) {
+    try {
+      const ops = orderedIds.map((id, index) => ({
+        updateOne: { filter: { _id: id }, update: { $set: { order: index } } }
+      }));
+      await WishList.bulkWrite(ops);
+      logger.info(`WishList reordered: ${orderedIds.length} items`);
+    } catch (error) {
+      logger.error('WishList reorder error:', error);
       throw error;
     }
   }
@@ -69,10 +82,10 @@ class WishListService {
     }
   }
 
-  async analyzeByImage(imageUrl) {
+  async analyzeByImage(imageUrl, platform = 'shopee') {
     try {
-      logger.info('Analyzing product by image URL:', imageUrl);
-      const result = await analyzeImageForProduct(imageUrl);
+      logger.info(`Analyzing product by image URL (${platform}):`, imageUrl);
+      const result = await analyzeImageForProduct(imageUrl, platform);
       return result;
     } catch (error) {
       logger.error('WishList analyzeByImage error:', error);
@@ -80,13 +93,10 @@ class WishListService {
     }
   }
 
-  async analyzeByUrl(shopeeUrl) {
+  async analyzeByUrl(shopUrl, platform = 'shopee') {
     try {
-      if (!shopeeUrl || !shopeeUrl.includes('shopee')) {
-        throw new Error('URL không hợp lệ. Chỉ hỗ trợ link Shopee');
-      }
-      logger.info('Analyzing product by URL:', shopeeUrl);
-      const result = await analyzeShopeeUrl(shopeeUrl);
+      logger.info(`Analyzing product by URL (${platform}):`, shopUrl);
+      const result = await analyzeShopeeUrl(shopUrl, platform);
       return result;
     } catch (error) {
       logger.error('WishList analyzeByUrl error:', error);

@@ -9,6 +9,7 @@ router.put('/:id', asyncHandler(wishListController.update));
 router.patch('/:id/purchased', asyncHandler(wishListController.markPurchased));
 router.delete('/:id', asyncHandler(wishListController.delete));
 
+router.post('/reorder', asyncHandler(wishListController.reorder));
 router.post('/analyze/image', asyncHandler(wishListController.analyzeByImage));
 router.post('/analyze/url', asyncHandler(wishListController.analyzeByUrl));
 
