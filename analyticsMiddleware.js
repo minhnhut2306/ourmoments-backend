@@ -1,4 +1,4 @@
-const TRACKER_URL = "https://analytics-tracker.nhutnm2306.workers.dev/collect";
+const TRACKER_URL = "https://nm-insights.nhutnm2306.workers.dev/ping";
 
 function trackRequest(siteId) {
   return (req, res, next) => {
